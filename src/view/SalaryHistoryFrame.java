@@ -23,19 +23,20 @@ public class SalaryHistoryFrame extends JFrame {
     private JTextField yearField;
 
     public SalaryHistoryFrame(User loggedUser) {
-
         this.loggedUser = loggedUser;
 
         setTitle("Salary History - " + loggedUser.getUsername());
-        setSize(800, 550);
+        setSize(850, 600);
         setLocationRelativeTo(null);
+        getContentPane().setBackground(new Color(245, 247, 250));
 
         JLabel titleLabel = new JLabel(
                 "Salary History for " + loggedUser.getUsername(),
                 SwingConstants.CENTER
         );
-
-        titleLabel.setFont(new Font("Arial", Font.BOLD, 22));
+        titleLabel.setFont(new Font("Arial", Font.BOLD, 26));
+        titleLabel.setForeground(new Color(24, 31, 45));
+        titleLabel.setBorder(BorderFactory.createEmptyBorder(20, 10, 20, 10));
 
         tableModel = new DefaultTableModel(
                 new Object[]{"ID", "Amount", "Month", "Year"},
@@ -43,7 +44,14 @@ public class SalaryHistoryFrame extends JFrame {
         );
 
         salaryTable = new JTable(tableModel);
-        salaryTable.setRowHeight(25);
+        salaryTable.setRowHeight(30);
+        salaryTable.setFont(new Font("Arial", Font.PLAIN, 14));
+        salaryTable.getTableHeader().setFont(new Font("Arial", Font.BOLD, 14));
+        salaryTable.getTableHeader().setBackground(new Color(38, 49, 68));
+        salaryTable.getTableHeader().setForeground(Color.WHITE);
+        salaryTable.setSelectionBackground(new Color(220, 235, 255));
+        salaryTable.setSelectionForeground(Color.BLACK);
+        salaryTable.setGridColor(new Color(230, 230, 230));
 
         idField = new JTextField();
         idField.setEditable(false);
@@ -52,17 +60,21 @@ public class SalaryHistoryFrame extends JFrame {
         monthField = new JTextField();
         yearField = new JTextField();
 
-        JButton refreshButton = new JButton("Refresh");
-        JButton updateButton = new JButton("Update Salary");
-        JButton deleteButton = new JButton("Delete Salary");
+        styleField(idField);
+        styleField(amountField);
+        styleField(monthField);
+        styleField(yearField);
 
-        JPanel formPanel = new JPanel(
-                new GridLayout(5, 2, 10, 10)
-        );
+        JButton refreshButton = createButton("Refresh");
+        JButton updateButton = createButton("Update Salary");
+        JButton deleteButton = createButton("Delete Salary");
 
-        formPanel.setBorder(
-                BorderFactory.createEmptyBorder(20, 20, 20, 20)
-        );
+        JPanel formPanel = new JPanel(new GridLayout(5, 2, 12, 12));
+        formPanel.setBackground(Color.WHITE);
+        formPanel.setBorder(BorderFactory.createCompoundBorder(
+                BorderFactory.createLineBorder(new Color(225, 230, 235), 1),
+                BorderFactory.createEmptyBorder(20, 25, 20, 25)
+        ));
 
         formPanel.add(new JLabel("Salary ID:"));
         formPanel.add(idField);
@@ -79,8 +91,9 @@ public class SalaryHistoryFrame extends JFrame {
         formPanel.add(refreshButton);
         formPanel.add(updateButton);
 
-        JPanel bottomPanel = new JPanel(new BorderLayout());
-
+        JPanel bottomPanel = new JPanel(new BorderLayout(10, 10));
+        bottomPanel.setBackground(new Color(245, 247, 250));
+        bottomPanel.setBorder(BorderFactory.createEmptyBorder(10, 20, 20, 20));
         bottomPanel.add(formPanel, BorderLayout.CENTER);
         bottomPanel.add(deleteButton, BorderLayout.SOUTH);
 
@@ -89,7 +102,6 @@ public class SalaryHistoryFrame extends JFrame {
         add(bottomPanel, BorderLayout.SOUTH);
 
         salaryTable.getSelectionModel().addListSelectionListener(e -> {
-
             if (!e.getValueIsAdjusting()) {
                 fillFormFromTable();
             }
@@ -102,17 +114,32 @@ public class SalaryHistoryFrame extends JFrame {
         loadSalaries();
     }
 
-    private void loadSalaries() {
+    private JButton createButton(String text) {
+        JButton button = new JButton(text);
+        button.setFocusPainted(false);
+        button.setBorderPainted(false);
+        button.setFont(new Font("Arial", Font.BOLD, 14));
+        button.setBackground(new Color(38, 49, 68));
+        button.setForeground(Color.WHITE);
+        button.setCursor(new Cursor(Cursor.HAND_CURSOR));
+        return button;
+    }
 
+    private void styleField(JTextField field) {
+        field.setFont(new Font("Arial", Font.PLAIN, 14));
+        field.setBorder(BorderFactory.createCompoundBorder(
+                BorderFactory.createLineBorder(new Color(210, 215, 220)),
+                BorderFactory.createEmptyBorder(5, 8, 5, 8)
+        ));
+    }
+
+    private void loadSalaries() {
         tableModel.setRowCount(0);
 
         SalaryDAO salaryDAO = new SalaryDAO();
-
-        List<Salary> salaries =
-                salaryDAO.getSalariesByUser(loggedUser.getUserId());
+        List<Salary> salaries = salaryDAO.getSalariesByUser(loggedUser.getUserId());
 
         for (Salary s : salaries) {
-
             tableModel.addRow(new Object[]{
                     s.getSalaryId(),
                     s.getAmount(),
@@ -123,95 +150,48 @@ public class SalaryHistoryFrame extends JFrame {
     }
 
     private void fillFormFromTable() {
-
         int selectedRow = salaryTable.getSelectedRow();
 
         if (selectedRow >= 0) {
-
-            idField.setText(
-                    tableModel.getValueAt(selectedRow, 0).toString()
-            );
-
-            amountField.setText(
-                    tableModel.getValueAt(selectedRow, 1).toString()
-            );
-
-            monthField.setText(
-                    tableModel.getValueAt(selectedRow, 2).toString()
-            );
-
-            yearField.setText(
-                    tableModel.getValueAt(selectedRow, 3).toString()
-            );
+            idField.setText(tableModel.getValueAt(selectedRow, 0).toString());
+            amountField.setText(tableModel.getValueAt(selectedRow, 1).toString());
+            monthField.setText(tableModel.getValueAt(selectedRow, 2).toString());
+            yearField.setText(tableModel.getValueAt(selectedRow, 3).toString());
         }
     }
 
     private void updateSalary() {
-
         try {
-
             if (idField.getText().isEmpty()) {
-
-                JOptionPane.showMessageDialog(
-                        this,
-                        "Please select a salary first."
-                );
-
+                JOptionPane.showMessageDialog(this, "Please select a salary first.");
                 return;
             }
 
             Salary salary = new Salary();
 
-            salary.setSalaryId(
-                    Integer.parseInt(idField.getText())
-            );
-
+            salary.setSalaryId(Integer.parseInt(idField.getText()));
             salary.setUserId(loggedUser.getUserId());
-
-            salary.setAmount(
-                    new BigDecimal(amountField.getText())
-            );
-
-            salary.setMonth(
-                    Integer.parseInt(monthField.getText())
-            );
-
-            salary.setYear(
-                    Integer.parseInt(yearField.getText())
-            );
+            salary.setAmount(new BigDecimal(amountField.getText()));
+            salary.setMonth(Integer.parseInt(monthField.getText()));
+            salary.setYear(Integer.parseInt(yearField.getText()));
 
             SalaryDAO salaryDAO = new SalaryDAO();
-
             salaryDAO.updateSalary(salary);
 
-            JOptionPane.showMessageDialog(
-                    this,
-                    "Salary updated successfully."
-            );
+            JOptionPane.showMessageDialog(this, "Salary updated successfully.");
 
             loadSalaries();
             clearFields();
 
         } catch (Exception e) {
-
-            JOptionPane.showMessageDialog(
-                    this,
-                    "Error while updating salary."
-            );
+            JOptionPane.showMessageDialog(this, "Error while updating salary.");
         }
     }
 
     private void deleteSalary() {
-
         try {
-
             if (idField.getText().isEmpty()) {
-
-                JOptionPane.showMessageDialog(
-                        this,
-                        "Please select a salary first."
-                );
-
+                JOptionPane.showMessageDialog(this, "Please select a salary first.");
                 return;
             }
 
@@ -223,42 +203,30 @@ public class SalaryHistoryFrame extends JFrame {
             );
 
             if (confirm == JOptionPane.YES_OPTION) {
-
-                int salaryId =
-                        Integer.parseInt(idField.getText());
+                int salaryId = Integer.parseInt(idField.getText());
 
                 SalaryDAO salaryDAO = new SalaryDAO();
-
                 salaryDAO.deleteSalary(
                         salaryId,
                         loggedUser.getUserId()
                 );
 
-                JOptionPane.showMessageDialog(
-                        this,
-                        "Salary deleted successfully."
-                );
+                JOptionPane.showMessageDialog(this, "Salary deleted successfully.");
 
                 loadSalaries();
                 clearFields();
             }
 
         } catch (Exception e) {
-
-            JOptionPane.showMessageDialog(
-                    this,
-                    "Error while deleting salary."
-            );
+            JOptionPane.showMessageDialog(this, "Error while deleting salary.");
         }
     }
 
     private void clearFields() {
-
         idField.setText("");
         amountField.setText("");
         monthField.setText("");
         yearField.setText("");
-
         salaryTable.clearSelection();
     }
 }

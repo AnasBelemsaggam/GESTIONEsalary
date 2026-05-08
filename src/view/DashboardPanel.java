@@ -17,7 +17,8 @@ public class DashboardPanel extends JPanel {
         this.loggedUser = loggedUser;
 
         setLayout(new BorderLayout());
-        setBackground(Color.WHITE);
+        setBackground(new Color(245, 247, 250));
+        setBorder(BorderFactory.createEmptyBorder(35, 35, 35, 35));
 
         LocalDate today = LocalDate.now();
         int month = today.getMonthValue();
@@ -40,45 +41,61 @@ public class DashboardPanel extends JPanel {
             remaining = report.getRemaining();
         }
 
-        JLabel title = new JLabel(
-                "Dashboard - " + loggedUser.getUsername(),
-                SwingConstants.CENTER
-        );
-        title.setFont(new Font("Arial", Font.BOLD, 28));
-
-        JLabel subtitle = new JLabel(
-                "Current Month: " + month + "/" + year,
-                SwingConstants.CENTER
-        );
-        subtitle.setFont(new Font("Arial", Font.PLAIN, 16));
-
         JPanel headerPanel = new JPanel(new GridLayout(2, 1));
-        headerPanel.setBackground(Color.WHITE);
-        headerPanel.add(title);
-        headerPanel.add(subtitle);
+        headerPanel.setBackground(new Color(245, 247, 250));
 
-        JPanel cardsPanel = new JPanel(new GridLayout(1, 3, 20, 20));
-        cardsPanel.setBorder(BorderFactory.createEmptyBorder(40, 40, 40, 40));
-        cardsPanel.setBackground(Color.WHITE);
+        JLabel welcomeLabel = new JLabel(
+                "Welcome back, " + loggedUser.getUsername() + "!",
+                SwingConstants.LEFT
+        );
+        welcomeLabel.setFont(new Font("Arial", Font.BOLD, 32));
+        welcomeLabel.setForeground(new Color(24, 31, 45));
 
-        cardsPanel.add(createCard("Salary", salary + " DH"));
-        cardsPanel.add(createCard("Expenses", expenses + " DH"));
-        cardsPanel.add(createCard("Remaining", remaining + " DH"));
+        JLabel subtitleLabel = new JLabel(
+                "Financial overview for " + month + "/" + year,
+                SwingConstants.LEFT
+        );
+        subtitleLabel.setFont(new Font("Arial", Font.PLAIN, 17));
+        subtitleLabel.setForeground(new Color(100, 110, 125));
+
+        headerPanel.add(welcomeLabel);
+        headerPanel.add(subtitleLabel);
+
+        JPanel cardsPanel = new JPanel(new GridLayout(1, 3, 25, 25));
+        cardsPanel.setBackground(new Color(245, 247, 250));
+        cardsPanel.setBorder(BorderFactory.createEmptyBorder(45, 0, 45, 0));
+
+        cardsPanel.add(createCard("Salary", salary + " DH", new Color(52, 152, 219)));
+        cardsPanel.add(createCard("Expenses", expenses + " DH", new Color(231, 76, 60)));
+        cardsPanel.add(createCard("Remaining", remaining + " DH", new Color(46, 204, 113)));
+
+        JLabel footer = new JLabel(
+                "Manage your salary, expenses and reports from the sidebar.",
+                SwingConstants.CENTER
+        );
+        footer.setFont(new Font("Arial", Font.PLAIN, 16));
+        footer.setForeground(new Color(120, 120, 120));
 
         add(headerPanel, BorderLayout.NORTH);
         add(cardsPanel, BorderLayout.CENTER);
+        add(footer, BorderLayout.SOUTH);
     }
 
-    private JPanel createCard(String title, String value) {
-        JPanel card = new JPanel(new BorderLayout());
-        card.setBackground(new Color(240, 245, 255));
-        card.setBorder(BorderFactory.createEmptyBorder(30, 20, 30, 20));
+    private JPanel createCard(String title, String value, Color accentColor) {
+        JPanel card = new JPanel(new BorderLayout(10, 10));
+        card.setBackground(Color.WHITE);
+        card.setBorder(BorderFactory.createCompoundBorder(
+                BorderFactory.createLineBorder(new Color(225, 230, 235), 1),
+                BorderFactory.createEmptyBorder(30, 25, 30, 25)
+        ));
 
-        JLabel titleLabel = new JLabel(title, SwingConstants.CENTER);
-        titleLabel.setFont(new Font("Arial", Font.BOLD, 18));
+        JLabel titleLabel = new JLabel(title, SwingConstants.LEFT);
+        titleLabel.setFont(new Font("Arial", Font.BOLD, 20));
+        titleLabel.setForeground(new Color(90, 100, 115));
 
-        JLabel valueLabel = new JLabel(value, SwingConstants.CENTER);
-        valueLabel.setFont(new Font("Arial", Font.BOLD, 26));
+        JLabel valueLabel = new JLabel(value, SwingConstants.LEFT);
+        valueLabel.setFont(new Font("Arial", Font.BOLD, 30));
+        valueLabel.setForeground(accentColor);
 
         card.add(titleLabel, BorderLayout.NORTH);
         card.add(valueLabel, BorderLayout.CENTER);

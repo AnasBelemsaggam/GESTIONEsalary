@@ -30,14 +30,17 @@ public class ExpenseHistoryFrame extends JFrame {
         this.loggedUser = loggedUser;
 
         setTitle("Expense History - " + loggedUser.getUsername());
-        setSize(900, 600);
+        setSize(950, 650);
         setLocationRelativeTo(null);
+        getContentPane().setBackground(new Color(245, 247, 250));
 
         JLabel titleLabel = new JLabel(
                 "Expense History for " + loggedUser.getUsername(),
                 SwingConstants.CENTER
         );
-        titleLabel.setFont(new Font("Arial", Font.BOLD, 22));
+        titleLabel.setFont(new Font("Arial", Font.BOLD, 26));
+        titleLabel.setForeground(new Color(24, 31, 45));
+        titleLabel.setBorder(BorderFactory.createEmptyBorder(20, 10, 20, 10));
 
         tableModel = new DefaultTableModel(
                 new Object[]{"ID", "Category", "Amount", "Description", "Date"},
@@ -45,7 +48,14 @@ public class ExpenseHistoryFrame extends JFrame {
         );
 
         expenseTable = new JTable(tableModel);
-        expenseTable.setRowHeight(25);
+        expenseTable.setRowHeight(30);
+        expenseTable.setFont(new Font("Arial", Font.PLAIN, 14));
+        expenseTable.getTableHeader().setFont(new Font("Arial", Font.BOLD, 14));
+        expenseTable.getTableHeader().setBackground(new Color(38, 49, 68));
+        expenseTable.getTableHeader().setForeground(Color.WHITE);
+        expenseTable.setSelectionBackground(new Color(220, 235, 255));
+        expenseTable.setSelectionForeground(Color.BLACK);
+        expenseTable.setGridColor(new Color(230, 230, 230));
 
         idField = new JTextField();
         idField.setEditable(false);
@@ -55,14 +65,23 @@ public class ExpenseHistoryFrame extends JFrame {
         descriptionField = new JTextField();
         dateField = new JTextField();
 
+        styleField(idField);
+        styleField(amountField);
+        styleField(descriptionField);
+        styleField(dateField);
+
         loadCategories();
 
-        JButton refreshButton = new JButton("Refresh");
-        JButton updateButton = new JButton("Update Expense");
-        JButton deleteButton = new JButton("Delete Expense");
+        JButton refreshButton = createButton("Refresh");
+        JButton updateButton = createButton("Update Expense");
+        JButton deleteButton = createButton("Delete Expense");
 
-        JPanel formPanel = new JPanel(new GridLayout(6, 2, 10, 10));
-        formPanel.setBorder(BorderFactory.createEmptyBorder(15, 20, 15, 20));
+        JPanel formPanel = new JPanel(new GridLayout(6, 2, 12, 12));
+        formPanel.setBackground(Color.WHITE);
+        formPanel.setBorder(BorderFactory.createCompoundBorder(
+                BorderFactory.createLineBorder(new Color(225, 230, 235), 1),
+                BorderFactory.createEmptyBorder(20, 25, 20, 25)
+        ));
 
         formPanel.add(new JLabel("Expense ID:"));
         formPanel.add(idField);
@@ -82,7 +101,9 @@ public class ExpenseHistoryFrame extends JFrame {
         formPanel.add(refreshButton);
         formPanel.add(updateButton);
 
-        JPanel bottomPanel = new JPanel(new BorderLayout());
+        JPanel bottomPanel = new JPanel(new BorderLayout(10, 10));
+        bottomPanel.setBackground(new Color(245, 247, 250));
+        bottomPanel.setBorder(BorderFactory.createEmptyBorder(10, 20, 20, 20));
         bottomPanel.add(formPanel, BorderLayout.CENTER);
         bottomPanel.add(deleteButton, BorderLayout.SOUTH);
 
@@ -101,6 +122,25 @@ public class ExpenseHistoryFrame extends JFrame {
         deleteButton.addActionListener(e -> deleteExpense());
 
         loadExpenses();
+    }
+
+    private JButton createButton(String text) {
+        JButton button = new JButton(text);
+        button.setFocusPainted(false);
+        button.setBorderPainted(false);
+        button.setFont(new Font("Arial", Font.BOLD, 14));
+        button.setBackground(new Color(38, 49, 68));
+        button.setForeground(Color.WHITE);
+        button.setCursor(new Cursor(Cursor.HAND_CURSOR));
+        return button;
+    }
+
+    private void styleField(JTextField field) {
+        field.setFont(new Font("Arial", Font.PLAIN, 14));
+        field.setBorder(BorderFactory.createCompoundBorder(
+                BorderFactory.createLineBorder(new Color(210, 215, 220)),
+                BorderFactory.createEmptyBorder(5, 8, 5, 8)
+        ));
     }
 
     private void loadCategories() {
