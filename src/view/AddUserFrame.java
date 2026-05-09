@@ -14,7 +14,7 @@ public class AddUserFrame extends JFrame {
 
     public AddUserFrame() {
         setTitle("Register / Add User");
-        setSize(560, 470);
+        setSize(620, 560);
         setLocationRelativeTo(null);
         setResizable(false);
 
@@ -58,7 +58,7 @@ public class AddUserFrame extends JFrame {
         formPanel.add(Box.createVerticalStrut(14));
 
         formPanel.add(createFieldPanel("Password", passwordField));
-        formPanel.add(Box.createVerticalStrut(25));
+        formPanel.add(Box.createVerticalStrut(30));
 
         JButton saveButton = createPrimaryButton("Create Account");
         formPanel.add(saveButton);
@@ -74,7 +74,7 @@ public class AddUserFrame extends JFrame {
     private JPanel createFieldPanel(String labelText, JComponent field) {
         JPanel panel = new JPanel(new BorderLayout(0, 8));
         panel.setBackground(Color.WHITE);
-        panel.setMaximumSize(new Dimension(430, 75));
+        panel.setMaximumSize(new Dimension(430, 78));
 
         JLabel label = new JLabel(labelText);
         label.setFont(new Font("Arial", Font.BOLD, 14));
@@ -88,8 +88,8 @@ public class AddUserFrame extends JFrame {
 
     private void styleInput(JTextField field) {
         field.setFont(new Font("Arial", Font.PLAIN, 15));
-        field.setPreferredSize(new Dimension(430, 40));
-        field.setMaximumSize(new Dimension(430, 40));
+        field.setPreferredSize(new Dimension(430, 42));
+        field.setMaximumSize(new Dimension(430, 42));
         field.setBorder(BorderFactory.createCompoundBorder(
                 BorderFactory.createLineBorder(new Color(190, 198, 210), 1),
                 BorderFactory.createEmptyBorder(8, 12, 8, 12)
@@ -101,7 +101,9 @@ public class AddUserFrame extends JFrame {
 
     private JButton createPrimaryButton(String text) {
         JButton button = new JButton(text);
-        button.setMaximumSize(new Dimension(430, 45));
+        button.setMaximumSize(new Dimension(430, 48));
+        button.setPreferredSize(new Dimension(430, 48));
+        button.setAlignmentX(Component.CENTER_ALIGNMENT);
         button.setFont(new Font("Arial", Font.BOLD, 16));
         button.setForeground(Color.WHITE);
         button.setBackground(new Color(38, 49, 68));
