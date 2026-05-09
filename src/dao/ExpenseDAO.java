@@ -3,9 +3,12 @@ package dao;
 import database.ConnectionDB;
 import model.Expense;
 
+import java.math.BigDecimal;
 import java.sql.*;
 import java.util.ArrayList;
+import java.util.LinkedHashMap;
 import java.util.List;
+import java.util.Map;
 
 public class ExpenseDAO {
 
@@ -39,14 +42,8 @@ public class ExpenseDAO {
         List<Expense> expenses = new ArrayList<>();
 
         String sql =
-                "SELECT " +
-                        "e.expenseId, " +
-                        "e.userId, " +
-                        "e.categoryId, " +
-                        "c.name AS categoryName, " +
-                        "e.amount, " +
-                        "e.description, " +
-                        "e.expenseDate " +
+                "SELECT e.expenseId, e.userId, e.categoryId, c.name AS categoryName, " +
+                        "e.amount, e.description, e.expenseDate " +
                         "FROM Expenses e " +
                         "JOIN Categories c ON e.categoryId = c.categoryId " +
                         "WHERE e.userId = ? " +
@@ -79,6 +76,43 @@ public class ExpenseDAO {
         }
 
         return expenses;
+    }
+
+    public Map<String, BigDecimal> getSpendingByCategory(int userId, int month, int year) {
+        Map<String, BigDecimal> stats = new LinkedHashMap<>();
+
+        String sql =
+                "SELECT c.name AS categoryName, SUM(e.amount) AS totalAmount " +
+                        "FROM Expenses e " +
+                        "JOIN Categories c ON e.categoryId = c.categoryId " +
+                        "WHERE e.userId = ? " +
+                        "AND MONTH(e.expenseDate) = ? " +
+                        "AND YEAR(e.expenseDate) = ? " +
+                        "GROUP BY c.name " +
+                        "ORDER BY totalAmount DESC";
+
+        try {
+            Connection con = ConnectionDB.getConnection();
+            PreparedStatement ps = con.prepareStatement(sql);
+
+            ps.setInt(1, userId);
+            ps.setInt(2, month);
+            ps.setInt(3, year);
+
+            ResultSet rs = ps.executeQuery();
+
+            while (rs.next()) {
+                stats.put(
+                        rs.getString("categoryName"),
+                        rs.getBigDecimal("totalAmount")
+                );
+            }
+
+        } catch (SQLException e) {
+            e.printStackTrace();
+        }
+
+        return stats;
     }
 
     public void updateExpense(Expense expense) {

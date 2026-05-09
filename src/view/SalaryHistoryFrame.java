@@ -8,6 +8,7 @@ import javax.swing.*;
 import javax.swing.table.DefaultTableModel;
 import java.awt.*;
 import java.math.BigDecimal;
+import java.util.ArrayList;
 import java.util.List;
 
 public class SalaryHistoryFrame extends JFrame {
@@ -17,13 +18,15 @@ public class SalaryHistoryFrame extends JFrame {
     private JTable salaryTable;
     private DefaultTableModel tableModel;
 
-    private JTextField idField;
+    private List<Integer> salaryIds;
+
     private JTextField amountField;
     private JTextField monthField;
     private JTextField yearField;
 
     public SalaryHistoryFrame(User loggedUser) {
         this.loggedUser = loggedUser;
+        this.salaryIds = new ArrayList<>();
 
         setTitle("Salary History - " + loggedUser.getUsername());
         setSize(850, 600);
@@ -39,7 +42,7 @@ public class SalaryHistoryFrame extends JFrame {
         titleLabel.setBorder(BorderFactory.createEmptyBorder(20, 10, 20, 10));
 
         tableModel = new DefaultTableModel(
-                new Object[]{"ID", "Amount", "Month", "Year"},
+                new Object[]{"Amount", "Month", "Year"},
                 0
         );
 
@@ -53,14 +56,10 @@ public class SalaryHistoryFrame extends JFrame {
         salaryTable.setSelectionForeground(Color.BLACK);
         salaryTable.setGridColor(new Color(230, 230, 230));
 
-        idField = new JTextField();
-        idField.setEditable(false);
-
         amountField = new JTextField();
         monthField = new JTextField();
         yearField = new JTextField();
 
-        styleField(idField);
         styleField(amountField);
         styleField(monthField);
         styleField(yearField);
@@ -69,15 +68,12 @@ public class SalaryHistoryFrame extends JFrame {
         JButton updateButton = createButton("Update Salary");
         JButton deleteButton = createButton("Delete Salary");
 
-        JPanel formPanel = new JPanel(new GridLayout(5, 2, 12, 12));
+        JPanel formPanel = new JPanel(new GridLayout(4, 2, 12, 12));
         formPanel.setBackground(Color.WHITE);
         formPanel.setBorder(BorderFactory.createCompoundBorder(
                 BorderFactory.createLineBorder(new Color(225, 230, 235), 1),
                 BorderFactory.createEmptyBorder(20, 25, 20, 25)
         ));
-
-        formPanel.add(new JLabel("Salary ID:"));
-        formPanel.add(idField);
 
         formPanel.add(new JLabel("Amount:"));
         formPanel.add(amountField);
@@ -135,13 +131,15 @@ public class SalaryHistoryFrame extends JFrame {
 
     private void loadSalaries() {
         tableModel.setRowCount(0);
+        salaryIds.clear();
 
         SalaryDAO salaryDAO = new SalaryDAO();
         List<Salary> salaries = salaryDAO.getSalariesByUser(loggedUser.getUserId());
 
         for (Salary s : salaries) {
+            salaryIds.add(s.getSalaryId());
+
             tableModel.addRow(new Object[]{
-                    s.getSalaryId(),
                     s.getAmount(),
                     s.getMonth(),
                     s.getYear()
@@ -153,23 +151,26 @@ public class SalaryHistoryFrame extends JFrame {
         int selectedRow = salaryTable.getSelectedRow();
 
         if (selectedRow >= 0) {
-            idField.setText(tableModel.getValueAt(selectedRow, 0).toString());
-            amountField.setText(tableModel.getValueAt(selectedRow, 1).toString());
-            monthField.setText(tableModel.getValueAt(selectedRow, 2).toString());
-            yearField.setText(tableModel.getValueAt(selectedRow, 3).toString());
+            amountField.setText(tableModel.getValueAt(selectedRow, 0).toString());
+            monthField.setText(tableModel.getValueAt(selectedRow, 1).toString());
+            yearField.setText(tableModel.getValueAt(selectedRow, 2).toString());
         }
     }
 
     private void updateSalary() {
         try {
-            if (idField.getText().isEmpty()) {
+            int selectedRow = salaryTable.getSelectedRow();
+
+            if (selectedRow < 0) {
                 JOptionPane.showMessageDialog(this, "Please select a salary first.");
                 return;
             }
 
+            int salaryId = salaryIds.get(selectedRow);
+
             Salary salary = new Salary();
 
-            salary.setSalaryId(Integer.parseInt(idField.getText()));
+            salary.setSalaryId(salaryId);
             salary.setUserId(loggedUser.getUserId());
             salary.setAmount(new BigDecimal(amountField.getText()));
             salary.setMonth(Integer.parseInt(monthField.getText()));
@@ -190,7 +191,9 @@ public class SalaryHistoryFrame extends JFrame {
 
     private void deleteSalary() {
         try {
-            if (idField.getText().isEmpty()) {
+            int selectedRow = salaryTable.getSelectedRow();
+
+            if (selectedRow < 0) {
                 JOptionPane.showMessageDialog(this, "Please select a salary first.");
                 return;
             }
@@ -203,9 +206,10 @@ public class SalaryHistoryFrame extends JFrame {
             );
 
             if (confirm == JOptionPane.YES_OPTION) {
-                int salaryId = Integer.parseInt(idField.getText());
+                int salaryId = salaryIds.get(selectedRow);
 
                 SalaryDAO salaryDAO = new SalaryDAO();
+
                 salaryDAO.deleteSalary(
                         salaryId,
                         loggedUser.getUserId()
@@ -223,7 +227,6 @@ public class SalaryHistoryFrame extends JFrame {
     }
 
     private void clearFields() {
-        idField.setText("");
         amountField.setText("");
         monthField.setText("");
         yearField.setText("");

@@ -11,6 +11,7 @@ import javax.swing.table.DefaultTableModel;
 import java.awt.*;
 import java.math.BigDecimal;
 import java.time.LocalDate;
+import java.util.ArrayList;
 import java.util.List;
 
 public class ExpenseHistoryFrame extends JFrame {
@@ -20,7 +21,8 @@ public class ExpenseHistoryFrame extends JFrame {
     private JTable expenseTable;
     private DefaultTableModel tableModel;
 
-    private JTextField idField;
+    private List<Integer> expenseIds;
+
     private JComboBox<Category> categoryComboBox;
     private JTextField amountField;
     private JTextField descriptionField;
@@ -28,6 +30,7 @@ public class ExpenseHistoryFrame extends JFrame {
 
     public ExpenseHistoryFrame(User loggedUser) {
         this.loggedUser = loggedUser;
+        this.expenseIds = new ArrayList<>();
 
         setTitle("Expense History - " + loggedUser.getUsername());
         setSize(950, 650);
@@ -43,7 +46,7 @@ public class ExpenseHistoryFrame extends JFrame {
         titleLabel.setBorder(BorderFactory.createEmptyBorder(20, 10, 20, 10));
 
         tableModel = new DefaultTableModel(
-                new Object[]{"ID", "Category", "Amount", "Description", "Date"},
+                new Object[]{"Category", "Amount", "Description", "Date"},
                 0
         );
 
@@ -57,15 +60,11 @@ public class ExpenseHistoryFrame extends JFrame {
         expenseTable.setSelectionForeground(Color.BLACK);
         expenseTable.setGridColor(new Color(230, 230, 230));
 
-        idField = new JTextField();
-        idField.setEditable(false);
-
         categoryComboBox = new JComboBox<>();
         amountField = new JTextField();
         descriptionField = new JTextField();
         dateField = new JTextField();
 
-        styleField(idField);
         styleField(amountField);
         styleField(descriptionField);
         styleField(dateField);
@@ -76,15 +75,12 @@ public class ExpenseHistoryFrame extends JFrame {
         JButton updateButton = createButton("Update Expense");
         JButton deleteButton = createButton("Delete Expense");
 
-        JPanel formPanel = new JPanel(new GridLayout(6, 2, 12, 12));
+        JPanel formPanel = new JPanel(new GridLayout(5, 2, 12, 12));
         formPanel.setBackground(Color.WHITE);
         formPanel.setBorder(BorderFactory.createCompoundBorder(
                 BorderFactory.createLineBorder(new Color(225, 230, 235), 1),
                 BorderFactory.createEmptyBorder(20, 25, 20, 25)
         ));
-
-        formPanel.add(new JLabel("Expense ID:"));
-        formPanel.add(idField);
 
         formPanel.add(new JLabel("Category:"));
         formPanel.add(categoryComboBox);
@@ -156,13 +152,15 @@ public class ExpenseHistoryFrame extends JFrame {
 
     private void loadExpenses() {
         tableModel.setRowCount(0);
+        expenseIds.clear();
 
         ExpenseDAO expenseDAO = new ExpenseDAO();
         List<Expense> expenses = expenseDAO.getExpensesByUser(loggedUser.getUserId());
 
         for (Expense e : expenses) {
+            expenseIds.add(e.getExpenseId());
+
             tableModel.addRow(new Object[]{
-                    e.getExpenseId(),
                     e.getCategoryName(),
                     e.getAmount(),
                     e.getDescription(),
@@ -175,14 +173,12 @@ public class ExpenseHistoryFrame extends JFrame {
         int selectedRow = expenseTable.getSelectedRow();
 
         if (selectedRow >= 0) {
-            idField.setText(tableModel.getValueAt(selectedRow, 0).toString());
-
-            String categoryName = tableModel.getValueAt(selectedRow, 1).toString();
+            String categoryName = tableModel.getValueAt(selectedRow, 0).toString();
             selectCategoryByName(categoryName);
 
-            amountField.setText(tableModel.getValueAt(selectedRow, 2).toString());
-            descriptionField.setText(tableModel.getValueAt(selectedRow, 3).toString());
-            dateField.setText(tableModel.getValueAt(selectedRow, 4).toString());
+            amountField.setText(tableModel.getValueAt(selectedRow, 1).toString());
+            descriptionField.setText(tableModel.getValueAt(selectedRow, 2) == null ? "" : tableModel.getValueAt(selectedRow, 2).toString());
+            dateField.setText(tableModel.getValueAt(selectedRow, 3).toString());
         }
     }
 
@@ -199,7 +195,9 @@ public class ExpenseHistoryFrame extends JFrame {
 
     private void updateExpense() {
         try {
-            if (idField.getText().isEmpty()) {
+            int selectedRow = expenseTable.getSelectedRow();
+
+            if (selectedRow < 0) {
                 JOptionPane.showMessageDialog(this, "Please select an expense first.");
                 return;
             }
@@ -211,9 +209,11 @@ public class ExpenseHistoryFrame extends JFrame {
                 return;
             }
 
+            int expenseId = expenseIds.get(selectedRow);
+
             Expense expense = new Expense();
 
-            expense.setExpenseId(Integer.parseInt(idField.getText()));
+            expense.setExpenseId(expenseId);
             expense.setUserId(loggedUser.getUserId());
             expense.setCategoryId(selectedCategory.getCategoryId());
             expense.setAmount(new BigDecimal(amountField.getText()));
@@ -235,7 +235,9 @@ public class ExpenseHistoryFrame extends JFrame {
 
     private void deleteExpense() {
         try {
-            if (idField.getText().isEmpty()) {
+            int selectedRow = expenseTable.getSelectedRow();
+
+            if (selectedRow < 0) {
                 JOptionPane.showMessageDialog(this, "Please select an expense first.");
                 return;
             }
@@ -248,7 +250,7 @@ public class ExpenseHistoryFrame extends JFrame {
             );
 
             if (confirm == JOptionPane.YES_OPTION) {
-                int expenseId = Integer.parseInt(idField.getText());
+                int expenseId = expenseIds.get(selectedRow);
 
                 ExpenseDAO expenseDAO = new ExpenseDAO();
                 expenseDAO.deleteExpense(expenseId, loggedUser.getUserId());
@@ -265,11 +267,14 @@ public class ExpenseHistoryFrame extends JFrame {
     }
 
     private void clearFields() {
-        idField.setText("");
         amountField.setText("");
         descriptionField.setText("");
         dateField.setText("");
-        categoryComboBox.setSelectedIndex(0);
+
+        if (categoryComboBox.getItemCount() > 0) {
+            categoryComboBox.setSelectedIndex(0);
+        }
+
         expenseTable.clearSelection();
     }
 }
