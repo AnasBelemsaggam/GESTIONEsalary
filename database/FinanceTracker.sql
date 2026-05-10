@@ -11,6 +11,10 @@ GO
 USE FinanceTracker;
 GO
 
+-- =========================================
+-- USERS TABLE
+-- =========================================
+
 CREATE TABLE Users (
                        userId INT IDENTITY(1,1) PRIMARY KEY,
                        username VARCHAR(50) NOT NULL UNIQUE,
@@ -21,6 +25,10 @@ CREATE TABLE Users (
 );
 GO
 
+-- =========================================
+-- CATEGORIES TABLE
+-- =========================================
+
 CREATE TABLE Categories (
                             categoryId INT IDENTITY(1,1) PRIMARY KEY,
                             name VARCHAR(50) NOT NULL,
@@ -28,7 +36,7 @@ CREATE TABLE Categories (
 );
 GO
 
-INSERT INTO Categories (name, icon)
+INSERT INTO Categories(name, icon)
 VALUES
 ('Rent', NULL),
 ('Groceries', NULL),
@@ -39,31 +47,36 @@ VALUES
 ('Other', NULL);
 GO
 
+-- =========================================
+-- SALARIES TABLE
+-- =========================================
+
 CREATE TABLE Salaries (
                           salaryId INT IDENTITY(1,1) PRIMARY KEY,
                           userId INT NOT NULL,
                           amount DECIMAL(12,2) NOT NULL CHECK (amount >= 0),
-                          month TINYINT NOT NULL CHECK (month BETWEEN 1 AND 12),
-    year SMALLINT NOT NULL CHECK (year >= 2000),
+                          month INT NOT NULL CHECK (month BETWEEN 1 AND 12),
+    year INT NOT NULL CHECK (year >= 2000),
     createdAt DATETIME DEFAULT GETDATE(),
 
     CONSTRAINT FK_Salaries_Users
     FOREIGN KEY (userId)
     REFERENCES Users(userId)
-    ON DELETE CASCADE,
-
-    CONSTRAINT UQ_Salary_UserMonthYear
-    UNIQUE (userId, month, year)
+    ON DELETE CASCADE
 );
 GO
+
+-- =========================================
+-- EXPENSES TABLE
+-- =========================================
 
 CREATE TABLE Expenses (
                           expenseId INT IDENTITY(1,1) PRIMARY KEY,
                           userId INT NOT NULL,
                           categoryId INT NOT NULL,
                           amount DECIMAL(12,2) NOT NULL CHECK (amount > 0),
-                          description VARCHAR(200) NULL,
-                          expenseDate DATE NOT NULL DEFAULT CAST(GETDATE() AS DATE),
+                          description VARCHAR(255),
+                          expenseDate DATE NOT NULL DEFAULT GETDATE(),
                           createdAt DATETIME DEFAULT GETDATE(),
 
                           CONSTRAINT FK_Expenses_Users
@@ -77,29 +90,30 @@ CREATE TABLE Expenses (
 );
 GO
 
-CREATE INDEX IX_Expenses_UserDate
-    ON Expenses(userId, expenseDate);
-GO
+-- =========================================
+-- MONTHLY REPORTS TABLE
+-- =========================================
 
 CREATE TABLE MonthlyReports (
                                 reportId INT IDENTITY(1,1) PRIMARY KEY,
                                 userId INT NOT NULL,
-                                month TINYINT NOT NULL CHECK (month BETWEEN 1 AND 12),
-    year SMALLINT NOT NULL,
-    salary DECIMAL(12,2) NOT NULL,
-    totalExpenses DECIMAL(12,2) NOT NULL,
-    remaining AS (salary - totalExpenses),
-    generatedAt DATETIME DEFAULT GETDATE(),
+                                month INT NOT NULL,
+                                year INT NOT NULL,
+                                salary DECIMAL(12,2) NOT NULL,
+                                totalExpenses DECIMAL(12,2) NOT NULL,
+                                remaining AS (salary - totalExpenses),
+                                generatedAt DATETIME DEFAULT GETDATE(),
 
-    CONSTRAINT FK_Reports_Users
-    FOREIGN KEY (userId)
-    REFERENCES Users(userId)
-    ON DELETE CASCADE,
-
-    CONSTRAINT UQ_Report_UserMonthYear
-    UNIQUE (userId, month, year)
+                                CONSTRAINT FK_Reports_Users
+                                    FOREIGN KEY (userId)
+                                        REFERENCES Users(userId)
+                                        ON DELETE CASCADE
 );
 GO
+
+-- =========================================
+-- VIEW: MONTHLY SUMMARY
+-- =========================================
 
 CREATE VIEW vw_MonthlySummary
 AS
@@ -109,14 +123,21 @@ SELECT
     s.month,
     s.year,
     s.amount AS salary,
+
     ISNULL(SUM(e.amount), 0) AS totalExpenses,
+
     s.amount - ISNULL(SUM(e.amount), 0) AS remaining
+
 FROM Salaries s
-         JOIN Users u ON s.userId = u.userId
+
+         JOIN Users u
+              ON s.userId = u.userId
+
          LEFT JOIN Expenses e
                    ON e.userId = s.userId
                        AND MONTH(e.expenseDate) = s.month
         AND YEAR(e.expenseDate) = s.year
+
         GROUP BY
         s.userId,
         u.username,
@@ -125,53 +146,111 @@ FROM Salaries s
         s.amount;
 GO
 
-CREATE OR ALTER PROCEDURE sp_AddExpense
+-- =========================================
+-- VIEW: CATEGORY STATISTICS
+-- =========================================
+
+CREATE VIEW vw_MonthlyByCategory
+AS
+SELECT
+    c.name AS category,
+    SUM(e.amount) AS totalAmount
+FROM Expenses e
+         JOIN Categories c
+              ON e.categoryId = c.categoryId
+GROUP BY c.name;
+GO
+
+-- =========================================
+-- PROCEDURE: ADD EXPENSE
+-- =========================================
+
+CREATE PROCEDURE sp_AddExpense
     @userId INT,
     @categoryId INT,
     @amount DECIMAL(12,2),
-    @description VARCHAR(200) = NULL,
-    @date DATE = NULL
-    AS
+    @description VARCHAR(255),
+    @expenseDate DATE
+AS
 BEGIN
-INSERT INTO Expenses(userId, categoryId, amount, description, expenseDate)
-VALUES(@userId, @categoryId, @amount, @description, ISNULL(@date, CAST(GETDATE() AS DATE)));
+
+INSERT INTO Expenses(
+    userId,
+    categoryId,
+    amount,
+    description,
+    expenseDate
+)
+VALUES(
+          @userId,
+          @categoryId,
+          @amount,
+          @description,
+          @expenseDate
+      );
+
 END;
 GO
 
-CREATE OR ALTER PROCEDURE sp_GetMonthlySummary
+-- =========================================
+-- PROCEDURE: GET MONTHLY SUMMARY
+-- =========================================
+
+CREATE PROCEDURE sp_GetMonthlySummary
     @userId INT,
-    @month TINYINT,
-    @year SMALLINT
-    AS
+    @month INT,
+    @year INT
+AS
 BEGIN
+
 SELECT *
 FROM vw_MonthlySummary
 WHERE userId = @userId
           AND month = @month
           AND year = @year;
+
 END;
 GO
 
-INSERT INTO Users (username, email, passwordHash, role)
+-- =========================================
+-- DEFAULT USERS
+-- =========================================
+
+INSERT INTO Users(username, email, passwordHash, role)
 VALUES
-('anas', 'anas@email.com', '123456', 'ADMIN'),
-('sara', 'sara@email.com', '123456', 'USER');
+('anas', 'anas@gmail.com', '123456', 'ADMIN'),
+('sara', 'sara@gmail.com', '123456', 'USER');
 GO
 
-IF NOT EXISTS (SELECT * FROM sys.server_principals WHERE name = 'finance_user')
+-- =========================================
+-- SQL SERVER LOGIN
+-- =========================================
+
+IF NOT EXISTS (
+    SELECT *
+    FROM sys.server_principals
+    WHERE name = 'finance_user'
+)
 BEGIN
-    CREATE LOGIN finance_user WITH PASSWORD = 'Finance2026!Strong';
+    CREATE LOGIN finance_user
+    WITH PASSWORD = 'Finance2026!Strong';
 END
 GO
 
 USE FinanceTracker;
 GO
 
-IF NOT EXISTS (SELECT * FROM sys.database_principals WHERE name = 'finance_user')
+IF NOT EXISTS (
+    SELECT *
+    FROM sys.database_principals
+    WHERE name = 'finance_user'
+)
 BEGIN
-    CREATE USER finance_user FOR LOGIN finance_user;
+    CREATE USER finance_user
+    FOR LOGIN finance_user;
 END
 GO
 
-ALTER ROLE db_owner ADD MEMBER finance_user;
-GO
+ALTER ROLE db_owner
+ADD MEMBER finance_user;
+GOgories;

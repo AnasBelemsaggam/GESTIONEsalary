@@ -141,6 +141,7 @@ public class UserDAO {
             if (rs.next()) {
                 String currentPassword = rs.getString("passwordHash");
 
+
                 if (!currentPassword.equals(oldPassword)) {
                     return false;
                 }
