@@ -12,7 +12,7 @@ public class CategoryDAO {
     public List<Category> getAllCategories() {
         List<Category> categories = new ArrayList<>();
 
-        String sql = "SELECT categoryId, name, icon FROM Categories";
+        String sql = "SELECT categoryId, name FROM Categories";
 
         try {
             Connection con = ConnectionDB.getConnection();
@@ -24,7 +24,6 @@ public class CategoryDAO {
 
                 category.setCategoryId(rs.getInt("categoryId"));
                 category.setName(rs.getString("name"));
-                category.setIcon(rs.getString("icon"));
 
                 categories.add(category);
             }
@@ -37,7 +36,7 @@ public class CategoryDAO {
     }
 
     public Category getCategoryById(int categoryId) {
-        String sql = "SELECT categoryId, name, icon FROM Categories WHERE categoryId = ?";
+        String sql = "SELECT categoryId, name FROM Categories WHERE categoryId = ?";
 
         try {
             Connection con = ConnectionDB.getConnection();
@@ -52,7 +51,6 @@ public class CategoryDAO {
 
                 category.setCategoryId(rs.getInt("categoryId"));
                 category.setName(rs.getString("name"));
-                category.setIcon(rs.getString("icon"));
 
                 return category;
             }
